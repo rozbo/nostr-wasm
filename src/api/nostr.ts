@@ -34,13 +34,16 @@ export interface Nostr {
    */
   getPublicKey(seckey: Uint8Array): Uint8Array
 
+
+  hashEvent(event: Event): string
+
   /**
    * Fills in an event object with pubkey, id and sig.
    * @param event - the Nostr event object
    * @param seckey - the private key
    * @param entropy - optional entropy to use
    */
-  finalizeEvent(event: Event, seckey: Uint8Array, ent?: Uint8Array): void
+  finalizeEvent(event: Event, seckey: Uint8Array, ent?: Uint8Array, skipEventId?: boolean): void
 
   /**
    * Verifies if an event's .id property is correct and that the .sig is valid
@@ -181,7 +184,7 @@ export const NostrWasm = async (
       )
     },
 
-    finalizeEvent(event, seckey, ent) {
+    finalizeEvent(event, seckey, ent, skipEventId) {
       with_keypair(seckey, () => {
         // get public key (as in getPublicKey function above)
         g_wasm.keypair_xonly_pub(ip_ctx, ip_xonly_pubkey, null, ip_keypair)
@@ -196,8 +199,11 @@ export const NostrWasm = async (
         )
         event.pubkey = toHex(pubkey)
 
-        // compute event id
-        event.id = toHex(compute_event_id(event))
+        if(!skipEventId){
+          // compute event id
+          event.id = toHex(compute_event_id(event))
+        }
+
 
         // copy entropy bytes into place, if they are provided
         if (!ent && crypto.getRandomValues) {
@@ -224,7 +230,9 @@ export const NostrWasm = async (
       )
       event.sig = toHex(sig)
     },
-
+    hashEvent(event: Event): string{
+      return toHex(compute_event_id(event))
+    },
     verifyEvent(event: Event) {
       const id = fromHex(event.id)
 

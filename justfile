@@ -5,6 +5,9 @@ build:
   bun run ./src/generate.ts public/out/secp256k1.js > ./src/gen/wasm.ts
   rollup -c rollup.config.js --configPlugin typescript
 
+build-ts:
+  rollup -c rollup.config.js --configPlugin typescript
+
 demo: build
   cd demo && ./node_modules/.bin/vite build --sourcemap=inline --debug
 
